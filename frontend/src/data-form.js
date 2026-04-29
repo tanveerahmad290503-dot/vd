@@ -1,22 +1,24 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
     Box,
     Button,
-    Typography
+    Typography,
+    TextField,
 } from '@mui/material';
 import axios from 'axios';
 
 const endpointMapping = {
-    'Notion': 'notion',
-    'Airtable': 'airtable',
-    'HubSpot': 'hubspot',
+    Notion: 'notion',
+    Airtable: 'airtable',
+    HubSpot: 'hubspot',
 };
 
 export const DataForm = ({ integrationType, credentials }) => {
     const [loadedData, setLoadedData] = useState(null);
-    const endpoint = endpointMapping[integrationType];
+    const endpoint = useMemo(() => endpointMapping[integrationType], [integrationType]);
 
     const handleLoad = async () => {
+        if (!credentials || !endpoint) return;
         try {
             const formData = new FormData();
             formData.append('credentials', JSON.stringify(credentials));
@@ -33,53 +35,35 @@ export const DataForm = ({ integrationType, credentials }) => {
     };
 
     return (
-        <Box display='flex' flexDirection='column' width='100%' alignItems='center'>
+        <Box className="data-column">
+            <Box className="panel data-panel">
+                <Box className="data-header">
+                    <Typography className="panel-title">Synchronized Data</Typography>
+                    <TextField placeholder="Filter Items..." size="small" disabled />
+                </Box>
 
-            <Box width="100%" maxWidth={500}>
-
-                <Button
-                    onClick={handleLoad}
-                    sx={{ mt: 2 }}
-                    variant='contained'
-                    fullWidth
-                >
-                    Load Data
-                </Button>
-
-                <Button
-                    onClick={() => setLoadedData(null)}
-                    sx={{ mt: 1 }}
-                    variant='outlined'
-                    fullWidth
-                >
-                    Clear Data
-                </Button>
-
-                {loadedData && (
-                    <Box sx={{ mt: 2 }}>
-                        <Typography variant="subtitle2" gutterBottom>
-                            Loaded Data
-                        </Typography>
-
-                        {loadedData.map((item) => (
-                            <Box
-                                key={item.id}
-                                sx={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    padding: '10px',
-                                    borderBottom: '1px solid #eee'
-                                }}
-                            >
+                <Box className="data-body">
+                    {loadedData?.length ? (
+                        loadedData.map((item) => (
+                            <Box key={item.id} className="data-row">
                                 <Typography>{item.name}</Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                    {item.type}
-                                </Typography>
+                                <Typography variant="caption">{item.type}</Typography>
                             </Box>
-                        ))}
-                    </Box>
-                )}
-
+                        ))
+                    ) : (
+                        <Box className="empty-state">
+                            <Typography sx={{ fontSize: 32 }}>◌</Typography>
+                            <Typography className="empty-title">No data loaded yet</Typography>
+                            <Typography className="empty-subtitle">
+                                Connect an integration and load data to see your synchronized items appear here.
+                            </Typography>
+                        </Box>
+                    )}
+                </Box>
+            </Box>
+            <Box className="load-actions">
+                <Button onClick={handleLoad} variant="contained" disabled={!credentials}>Load Data</Button>
+                <Button onClick={() => setLoadedData(null)} variant="outlined">Clear Data</Button>
             </Box>
         </Box>
     );
